@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+</head>
+
+<body>
+    <canvas></canvas>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+
+        const socket = io();
+
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = 1024;
+        canvas.height = 600;
+
+        let players = []
+        let me;
+        socket.on('update_players', (_players) => {
+            players = [..._players]
+            me = players.find(x => x.id == socket.id)
+        });
+
+        window.addEventListener('keypress', (e) => {
+            console.log(e);
+            switch (e.code) {
+                case 'KeyA':
+                    socket.emit('update_position', {
+                        x: me.x - 10,
+                        y: me.y
+                    });
+                    break;
+                case 'KeyW':
+                    socket.emit('update_position', {
+                        x: me.x,
+                        y: me.y - 10
+                    });
+                    break;
+                case 'KeyS':
+                    socket.emit('update_position', {
+                        x: me.x,
+                        y: me.y + 10
+                    });
+                    break;
+                case 'KeyD':
+                    socket.emit('update_position', {
+                        x: me.x + 10,
+                        y: me.y
+                    });
+                    break;
+            }
+        })
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'red';
+            players.forEach(item => {
+                ctx.fillRect(item.x, item.y, 10, 10)
+            })
+        }
+        animate()
+
+    </script>
+</body>
+
+</html>
