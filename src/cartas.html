@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <script src="cartas.js"></script>
+</head>
+
+<body>
+    <canvas></canvas>
+
+    <script>
+
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = 1024;
+        canvas.height = 600;
+
+        const cartas = [];
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            cartas.forEach(item => {
+                item.draw()
+            })
+        }
+        animate()
+
+        const tileSize = 10;
+
+        class Carta {
+            constructor(x, y, mapa) {
+                this.x = x;
+                this.y = y;
+                this.map = mapa
+            }
+
+            draw() {
+                for (let i = 0; i < this.map.length; i++) {
+                    const row = this.map[i];
+                    for (let j = 0; j < row.length; j++) {
+                        const tile = row[j];
+
+                        const x = this.x + j * tileSize;
+                        const y = this.y + i * tileSize;
+
+                        ctx.fillStyle = tile == 0 ? 'brown' : 'red';
+                        ctx.fillRect(x, y, tileSize, tileSize)
+                    }
+                }
+            }
+        }
+
+        let offsetX = 10, offsetY = 10, interator = 0;
+        for (const cardAttr in cartasMap) {
+            const x = interator * (tileSize * 4) + offsetX;
+            cartas.push(new Carta(x, offsetY, cartasMap[cardAttr]));
+            interator++;
+        }
+
+    </script>
+</body>
+
+</html>
