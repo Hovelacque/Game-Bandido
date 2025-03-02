@@ -9,19 +9,28 @@ const io = new Server(server);
 
 const players = []
 
+const createColor = ()=>{
+  const randomNumber = ()=> Math.round(Math.random() * 255)
+  return `rgb(${randomNumber()},${randomNumber()},${randomNumber()})`
+}
+
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'src/index.html'));
 });
 
 io.on('connection', (socket) => {
   console.log('a user connected', socket.id);
-
+  
+  const color= createColor();
   players.push({
     id: socket.id,
     x: 0,
-    y: 0
+    y: 0,
+    color
   });
 
+  console.log('a user connected', socket.id, ` -> `,color );
+  
   io.emit('update_players', players);
 
   socket.on('update_position', ({x,y}) => {
