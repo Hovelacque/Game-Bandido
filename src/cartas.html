@@ -18,41 +18,75 @@
         canvas.height = 600;
 
         const cartas = [];
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            cartas.forEach(item => {
-                item.draw()
-            })
-        }
-        animate()
-
         const tileSize = 10;
+
+        const mouse = {
+            x: undefined,
+            y: undefined,
+            // press: false
+        }
+        // canvas.addEventListener('mouseup', (e) => mouse.press = false)
+        canvas.addEventListener('mousedown', (e) => {
+            const cartSelected = cartas.find(x => x.selected);
+            if (cartSelected)
+                cartSelected.toggleSelect();
+            const cart = cartas.find(x => x.isMouseOver());
+            if (cart)
+                cart.toggleSelect()
+        })
+        canvas.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        })
 
         class Carta {
             constructor(x, y, mapa) {
                 this.x = x;
                 this.y = y;
-                this.map = mapa
+                this.map = mapa;
+
+                const h = mapa.length;
+                const w = mapa[0].length;
+                this.width = (w * tileSize) + tileSize;
+                this.height = (h * tileSize) + tileSize;
+
+                this.selected = false
             }
 
             draw() {
+                const size = this.selected ? tileSize * 2 : tileSize
                 for (let i = 0; i < this.map.length; i++) {
                     const row = this.map[i];
                     for (let j = 0; j < row.length; j++) {
                         const tile = row[j];
 
-                        const x = this.x + j * tileSize;
-                        const y = this.y + i * tileSize;
+                        const x = this.x + j * size;
+                        const y = this.y + i * size;
 
-                        ctx.fillStyle = tile == 0 ? 'brown' : 'red';
-                        ctx.fillRect(x, y, tileSize, tileSize)
+                        ctx.fillStyle = tile == 0 ? 'brown' : tile == 1 ? 'red' : 'blue';
+                        ctx.fillRect(x, y, size, size)
                     }
                 }
+            }
+
+            update() {
+                // if (this.isMouseOver() && mouse.press)
+                //     this.selected = true;
+                // else
+                //     this.selected = false;
+                this.draw()
+            }
+
+            toggleSelect() {
+                this.selected = !this.selected;
+            }
+
+            isMouseOver() {
+                if (mouse.x > this.x && mouse.x < this.x + this.width &&
+                    mouse.y > this.y && mouse.y < this.y + this.height)
+                    return true;
+                else
+                    return false;
             }
         }
 
@@ -62,6 +96,25 @@
             cartas.push(new Carta(x, offsetY, cartasMap[cardAttr]));
             interator++;
         }
+
+        offsetX = 10; offsetY = 10 + (tileSize * 7); interator = 0;
+        for (const cardAttr in cartasFinalMap) {
+            const x = interator * (tileSize * 4) + offsetX;
+            cartas.push(new Carta(x, offsetY, cartasFinalMap[cardAttr]));
+            interator++;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            cartas.forEach(item => {
+                item.update()
+            })
+        }
+        animate()
 
     </script>
 </body>
