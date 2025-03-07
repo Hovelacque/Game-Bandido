@@ -27,12 +27,12 @@
         }
         // canvas.addEventListener('mouseup', (e) => mouse.press = false)
         canvas.addEventListener('mousedown', (e) => {
-            const cartSelected = cartas.find(x => x.selected);
-            if (cartSelected)
-                cartSelected.toggleSelect();
-            const cart = cartas.find(x => x.isMouseOver());
-            if (cart)
-                cart.toggleSelect()
+            const cardSelected = mao.cartas.find(x => x.selected);
+            if (cardSelected)
+                cardSelected.toggleSelect();
+            const card = mao.cartas.find(x => x.isMouseOver());
+            if (card)
+                card.toggleSelect()
         })
         canvas.addEventListener('mousemove', (e) => {
             mouse.x = e.clientX;
@@ -54,17 +54,20 @@
             }
 
             draw() {
-                const size = this.selected ? tileSize * 2 : tileSize
+                // const size = this.selected ? tileSize * 2 : tileSize
                 for (let i = 0; i < this.map.length; i++) {
                     const row = this.map[i];
                     for (let j = 0; j < row.length; j++) {
                         const tile = row[j];
 
-                        const x = this.x + j * size;
-                        const y = this.y + i * size;
+                        const x = this.x + j * tileSize;
+                        let y = this.y + i * tileSize;
+
+                        if (this.selected)
+                            y -= 20
 
                         ctx.fillStyle = tile == 0 ? 'brown' : tile == 1 ? 'red' : 'blue';
-                        ctx.fillRect(x, y, size, size)
+                        ctx.fillRect(x, y, tileSize, tileSize)
                     }
                 }
             }
@@ -104,6 +107,31 @@
             interator++;
         }
 
+        class Mao {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.cartas = [];
+                this.totalCartas = 10;
+                for (let i = 0; i < this.totalCartas; i++)
+                    this.addCard()
+            }
+
+            draw() {
+                this.cartas.forEach(item => item.update());
+            }
+
+            addCard() {
+                const rand = Math.floor(Math.random() * cartas.length);
+                const carta = cartas[rand];
+                const offsetX = this.x - ((this.totalCartas * carta.width) / 2);
+                let x = this.cartas.length * (tileSize * 4) + offsetX;
+                this.cartas.push(new Carta(x, this.y, carta.map));
+            }
+        }
+
+        const mao = new Mao(canvas.width / 2, canvas.height - (tileSize * 7));
+
         function animate() {
             requestAnimationFrame(animate);
 
@@ -113,6 +141,8 @@
             cartas.forEach(item => {
                 item.update()
             })
+
+            mao.draw();
         }
         animate()
 
