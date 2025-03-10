@@ -119,18 +119,27 @@
 
             draw() {
                 this.cartas.forEach(item => item.update());
+
+                const offsetX = this.x  - ((this.totalCartas * (tileSize * 4)) / 2);
+                const x = this.cartas.length * (tileSize * 4) + offsetX;
+                ctx.fillStyle = 'rgb(0,255,0)';
+                ctx.fillRect(x, this.y, 30, 30)
             }
 
             addCard() {
                 const rand = Math.floor(Math.random() * cartas.length);
                 const carta = cartas[rand];
                 const offsetX = this.x - ((this.totalCartas * carta.width) / 2);
-                let x = this.cartas.length * (tileSize * 4) + offsetX;
+                const x = this.cartas.length * (tileSize * 4) + offsetX;
                 this.cartas.push(new Carta(x, this.y, carta.map));
             }
         }
 
         const mao = new Mao(canvas.width / 2, canvas.height - (tileSize * 7));
+
+        class Mapa {
+
+        }
 
         function animate() {
             requestAnimationFrame(animate);
