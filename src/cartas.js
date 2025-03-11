@@ -249,4 +249,11 @@ const cartasFinalMap = {
         [0, 2, 0],
         [0, 2, 0]
     ]
+};
+const cartasBandidoMap = {
+    bandido5: [
+        [0, 1, 0, 0, 1, 0],
+        [0, 1, 3, 3, 1, 1],
+        [0, 1, 0, 0, 1, 0]
+    ],
 }

@@ -6,7 +6,7 @@
     <script src="cartas.js"></script>
 </head>
 
-<body>
+<body style="margin: 0;">
     <canvas></canvas>
 
     <script>
@@ -30,9 +30,16 @@
             const cardSelected = mao.cartas.find(x => x.selected);
             if (cardSelected)
                 cardSelected.toggleSelect();
+
             const card = mao.cartas.find(x => x.isMouseOver());
             if (card)
                 card.toggleSelect()
+
+            if (tabuleiro.isMouseOver() && cardSelected) {
+                const cartaDaMesa = tabuleiro.cartasNaMesa.find(x => x.isMouseOver());
+                if (cartaDaMesa)
+                    tabuleiro.addCard(cardSelected, cartaDaMesa)
+            }
         })
         canvas.addEventListener('mousemove', (e) => {
             mouse.x = e.clientX;
@@ -47,8 +54,8 @@
 
                 const h = mapa.length;
                 const w = mapa[0].length;
-                this.width = (w * tileSize) + tileSize;
-                this.height = (h * tileSize) + tileSize;
+                this.width = (w * tileSize);
+                this.height = (h * tileSize);
 
                 this.selected = false
             }
@@ -66,7 +73,17 @@
                         if (this.selected)
                             y -= 20
 
-                        ctx.fillStyle = tile == 0 ? 'brown' : tile == 1 ? 'red' : 'blue';
+                        if (this.isMouseOver())
+                            ctx.fillStyle = 'rgb(0,255,0)';
+                        else if (tile == 0)
+                            ctx.fillStyle = 'brown'
+                        else if (tile == 1)
+                            ctx.fillStyle = 'red'
+                        else if (tile == 2)
+                            ctx.fillStyle = 'blue';
+                        else
+                            ctx.fillStyle = 'yellow';
+
                         ctx.fillRect(x, y, tileSize, tileSize)
                     }
                 }
@@ -120,7 +137,7 @@
             draw() {
                 this.cartas.forEach(item => item.update());
 
-                const offsetX = this.x  - ((this.totalCartas * (tileSize * 4)) / 2);
+                const offsetX = this.x - ((this.totalCartas * (tileSize * 4)) / 2);
                 const x = this.cartas.length * (tileSize * 4) + offsetX;
                 ctx.fillStyle = 'rgb(0,255,0)';
                 ctx.fillRect(x, this.y, 30, 30)
@@ -137,9 +154,47 @@
 
         const mao = new Mao(canvas.width / 2, canvas.height - (tileSize * 7));
 
-        class Mapa {
+        class Tabuleiro {
+            constructor(saidas = 5) {
+                this.x = 15;
+                this.y = 155;
+                this.width = canvas.width - 30;
+                this.height = canvas.height - 240;
+                this.cartasNaMesa = []
 
+                const centerX = this.x + this.width / 2
+                const centerY = this.y + this.height / 2
+                let cartaBandido = cartasBandidoMap.bandido5;
+                // if (saidas == 6)
+                //     cartaBandido = cartasBandidoMap.bandido6;
+                this.cartasNaMesa.push(new Carta(centerX, centerY, cartaBandido));
+            }
+
+            draw() {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(10, 150, canvas.width - 20, canvas.height - 230)
+                ctx.fillStyle = 'black';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                this.cartasNaMesa.forEach(item => item.update());
+            }
+
+            isMouseOver() {
+                if (mouse.x > this.x && mouse.x < this.x + this.width &&
+                    mouse.y > this.y && mouse.y < this.y + this.height)
+                    return true;
+                else
+                    return false;
+            }
+
+            addCard(cartaDaMao, cartaDaMesa) {
+                const x = cartaDaMesa.x + cartaDaMesa.width
+                const y = cartaDaMesa.y //+ cartaDaMesa.height
+                this.cartasNaMesa.push(new Carta(x, y, cartaDaMao.map));
+            }
         }
+
+        const tabuleiro = new Tabuleiro();
 
         function animate() {
             requestAnimationFrame(animate);
@@ -152,6 +207,8 @@
             })
 
             mao.draw();
+
+            tabuleiro.draw();
         }
         animate()
 
