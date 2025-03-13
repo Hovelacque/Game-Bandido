@@ -17,6 +17,7 @@
         canvas.width = 1024;
         canvas.height = 600;
 
+        let cartaSelecionada = null;
         const cartas = [];
         const tileSize = 10;
 
@@ -57,7 +58,9 @@
                 this.width = (w * tileSize);
                 this.height = (h * tileSize);
 
-                this.selected = false
+                this.selected = false;
+
+                this.possiveisConexoes = [];
             }
 
             draw() {
@@ -73,7 +76,11 @@
                         if (this.selected)
                             y -= 20
 
-                        if (this.isMouseOver())
+                        // if (this.isMouseOver())
+                        //     ctx.fillStyle = 'rgb(0,255,0)';
+                        if (this.possiveisConexoes.findIndex(item => item.y == i && item.x == j) > -1)
+                            ctx.fillStyle = 'rgb(125,125,0)';
+                        else if (this.isMouseOverTile(x, y))
                             ctx.fillStyle = 'rgb(0,255,0)';
                         else if (tile == 0)
                             ctx.fillStyle = 'brown'
@@ -89,16 +96,143 @@
                 }
             }
 
-            update() {
+            update(verificarMatch = false) {
                 // if (this.isMouseOver() && mouse.press)
                 //     this.selected = true;
                 // else
                 //     this.selected = false;
+
+                if (cartaSelecionada && verificarMatch) {
+                    this.possiveisConexoes = [];
+
+                    const mfrow = this.firstRow()
+                    const slrow = cartaSelecionada.lastRow();
+                    let match = this.compareArrays(mfrow, slrow);
+                    if (match)
+                        for (let i = 0; i < match.length; i++)
+                            this.possiveisConexoes.push({
+                                x: match[i],
+                                y: 0
+                            })
+
+                    const mlrow = this.lastRow()
+                    const sfrow = cartaSelecionada.firstRow();
+                    match = this.compareArrays(mlrow, sfrow);
+                    if (match)
+                        for (let i = 0; i < match.length; i++)
+                            this.possiveisConexoes.push({
+                                x: match[i],
+                                y: this.map.length - 1
+                            })
+
+                    const mfcolumn = this.firstColumn()
+                    const slcolumn = cartaSelecionada.lastColumn();
+                    match = this.compareArrays(mfcolumn, slcolumn);
+                    if (match)
+                        for (let i = 0; i < match.length; i++)
+                            this.possiveisConexoes.push({
+                                x: 0,
+                                y: match[i]
+                            })
+
+                    const mlcolumn = this.lastColumn()
+                    const sfcolumn = cartaSelecionada.firstColumn();
+                    match = this.compareArrays(mlcolumn, sfcolumn);
+                    if (match)
+                        for (let i = 0; i < match.length; i++)
+                            this.possiveisConexoes.push({
+                                x: this.map[0].length - 1,
+                                y: match[i]
+                            })
+                }
+
                 this.draw()
+            }
+
+            compareArrays(a1, a2) {
+                if (!this.temConexaoDisponivel(a1) && !this.temConexaoDisponivel(a2))
+                    return null
+
+                //arrays de mesmo tamanho
+                if (a1.length == a2.length) {
+                    for (let i = 0; i < a1.length; i++)
+                        if (a1[i] != a2[i])
+                            return null;
+
+                    const matchs = []
+                    for (let i = 0; i < a1.length; i++)
+                        if (a1[i] == 1)
+                            matchs.push(i);
+                    return matchs
+                }
+                //arrays de tamanho diferente
+                else {
+                    const meuEhOMaior = a1.length > a2.length ? true : false
+                    const maior = a1.length > a2.length ? a1 : a2;
+                    const menor = a1.length < a2.length ? a1 : a2;
+
+                    const matchs = []
+                    for (let i = 0; i < maior.length; i = i + 3) {
+
+                        let match = true;
+                        const metadeMaior = [maior[i], maior[i + 1], maior[i + 2]];
+                        for (let j = 0; j < menor.length; j++)
+                            if (metadeMaior[i] != menor[j])
+                                match = false;
+
+                        if (match)
+                            if (meuEhOMaior)
+                                /*
+                                somo com o i para ajustar para segunda metade do maior
+                                no começo o i = 0 e na proxima i = 3
+                                */
+                                matchs.push(metadeMaior.findIndex(x => x == 1) + i);
+                            else
+                                matchs.push();
+                    }
+
+                    return matchs.length > 0 ? matchs : null
+                }
+            }
+
+            temConexaoDisponivel(a1) {
+                return a1.findIndex(x => x == 1) > -1;
             }
 
             toggleSelect() {
                 this.selected = !this.selected;
+                if (this.selected)
+                    cartaSelecionada = this;
+                else
+                    cartaSelecionada = null;
+            }
+
+            firstRow() {
+                return this.map[0]
+            }
+
+            lastRow() {
+                return this.map[this.map.length - 1]
+            }
+
+            firstColumn() {
+                const column = []
+                this.map.forEach(row => column.push(row[0]))
+                return column;
+            }
+
+            lastColumn() {
+                const column = []
+                this.map.forEach(row => column.push(row[row.length - 1]))
+                return column;
+            }
+
+            isMouseOverTile(x, y) {
+                if (mouse.x > x && mouse.x < x + tileSize &&
+                    mouse.y > y && mouse.y < y + tileSize)
+                    return true;
+                else
+                    return false;
             }
 
             isMouseOver() {
@@ -144,6 +278,7 @@
             }
 
             addCard() {
+                // const rand = 2
                 const rand = Math.floor(Math.random() * cartas.length);
                 const carta = cartas[rand];
                 const offsetX = this.x - ((this.totalCartas * carta.width) / 2);
@@ -164,7 +299,8 @@
 
                 const centerX = this.x + this.width / 2
                 const centerY = this.y + this.height / 2
-                let cartaBandido = cartasBandidoMap.bandido5;
+                // let cartaBandido = cartasBandidoMap.bandido5;
+                let cartaBandido = cartasBandidoMap.bandido51;
                 // if (saidas == 6)
                 //     cartaBandido = cartasBandidoMap.bandido6;
                 this.cartasNaMesa.push(new Carta(centerX, centerY, cartaBandido));
@@ -176,7 +312,7 @@
                 ctx.fillStyle = 'black';
                 ctx.fillRect(this.x, this.y, this.width, this.height);
 
-                this.cartasNaMesa.forEach(item => item.update());
+                this.cartasNaMesa.forEach(item => item.update(true));
             }
 
             isMouseOver() {
@@ -206,9 +342,8 @@
                 item.update()
             })
 
-            mao.draw();
-
             tabuleiro.draw();
+            mao.draw();
         }
         animate()
 
