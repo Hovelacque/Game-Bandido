@@ -304,6 +304,8 @@
                 // if (saidas == 6)
                 //     cartaBandido = cartasBandidoMap.bandido6;
                 this.cartasNaMesa.push(new Carta(centerX, centerY, cartaBandido));
+
+                this.possiveisConexoes = [];
             }
 
             draw() {
@@ -313,6 +315,36 @@
                 ctx.fillRect(this.x, this.y, this.width, this.height);
 
                 this.cartasNaMesa.forEach(item => item.update(true));
+                ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                this.possiveisConexoes.forEach(item => ctx.fillRect(item.x, item.y, item.width, item.height))
+            }
+
+            update() {
+                if (cartaSelecionada) {
+                    this.possiveisConexoes = [];
+
+                    const slrow = cartaSelecionada.lastRow();
+
+                    this.cartasNaMesa.forEach(item => {
+                        const mfrow = item.firstRow()
+                        // let match = item.compareArrays(mfrow, slrow);
+                        // if (match)
+                            this.possiveisConexoes.push({
+                                x: item.x,
+                                y: item.y + item.height,
+                                height: item.height,
+                                width: item.width
+                            })
+                        // for (let i = 0; i < match.length; i++)
+                        //     this.possiveisConexoes.push({
+                        //         x: match[i],
+                        //         y: 0
+                        //     })
+
+                    })
+                }
+
+                this.draw()
             }
 
             isMouseOver() {
@@ -342,7 +374,7 @@
                 item.update()
             })
 
-            tabuleiro.draw();
+            tabuleiro.update();
             mao.draw();
         }
         animate()
