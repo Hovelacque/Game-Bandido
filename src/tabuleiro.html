@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <script src="cartas.js"></script>
+</head>
+
+<body style="margin: 0;">
+    <canvas></canvas>
+
+    <script>
+
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = 1024;
+        canvas.height = 600;
+
+        const cartas = [];
+        const tileSize = 10;
+
+        const TILES = {
+            FREE: -1,
+            GROUND: 0,
+            PIPE: 1,
+            CAPPED_PIPE: 2,
+            CONNECTED_PIPE: 3
+        }
+
+        class Carta {
+            constructor(x, y, cardMap) {
+                this.x = x;
+                this.y = y;
+                this.cardMap = cardMap;
+
+                const h = cardMap.length;
+                const w = cardMap[0].length;
+                this.width = (w * tileSize);
+                this.height = (h * tileSize);
+            }
+
+            draw() {
+                for (let i = 0; i < this.cardMap.length; i++) {
+                    const row = this.cardMap[i];
+                    for (let j = 0; j < row.length; j++) {
+                        const tile = row[j];
+
+                        const x = this.x + j * tileSize;
+                        const y = this.y + i * tileSize;
+
+                        if (tile == TILES.GROUND)
+                            ctx.fillStyle = 'brown'
+                        else if (tile == TILES.PIPE)
+                            ctx.fillStyle = 'red'
+                        else if (tile == TILES.CAPPED_PIPE)
+                            ctx.fillStyle = 'blue';
+                        else if (tile == TILES.CONNECTED_PIPE)
+                            ctx.fillStyle = 'yellow';
+
+                        ctx.fillRect(x, y, tileSize, tileSize)
+                    }
+                }
+            }
+
+            update() {
+                this.draw()
+            }
+
+        }
+
+        class ArrayHelper {
+            static create(size, value) {
+                const arr = []
+                for (let i = 0; i < size; i++)
+                    arr.push(-1)
+                return arr;
+            }
+
+            static createMatriz(rSize, cSize, value) {
+                const matriz = []
+                for (let i = 0; i < rSize; i++)
+                    matriz.push(ArrayHelper.create(cSize, value))
+                return matriz;
+            }
+
+            static addMatriz(matrizTarget, matrizToAdd, row, column) {
+                for (let i = 0; i < matrizToAdd.length; i++)
+                    for (let j = 0; j < matrizToAdd[i].length; j++)
+                        matrizTarget[row + i][column + j] = matrizToAdd[i][j]
+            }
+        }
+
+        class Tabuleiro {
+            constructor(saidas = 5) {
+                this.x = 15;
+                this.y = 155;
+                this.width = canvas.width - 30;
+                this.height = canvas.height - 240;
+
+                // let cartaBandido = cartasBandidoMap.bandido5;
+                let cartaBandido = cartasBandidoMap.bandido51;
+                // if (saidas == 6)
+                //     cartaBandido = cartasBandidoMap.bandido6;
+                // this.addCard(cartaBandido, 0, 0)
+
+                // this.mesa = ArrayHelper.createMatriz(15, 18, -1)
+                // this.addCard(cartaBandido, 4, 4)
+
+                this.mesa = [...cartaBandido]
+                this.ajustSize();
+
+                this.centerX = this.x + this.width / 2 - ((this.mesa[0].length * tileSize) / 2)
+                this.centerY = this.y + this.height / 2 - ((this.mesa.length * tileSize) / 2)
+            }
+
+            draw() {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(10, 150, canvas.width - 20, canvas.height - 230)
+                ctx.fillStyle = 'black';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                for (let i = 0; i < this.mesa.length; i++) {
+                    const row = this.mesa[i];
+                    for (let j = 0; j < row.length; j++) {
+                        const tile = row[j];
+
+                        const x = this.centerX + j * tileSize;
+                        const y = this.centerY + i * tileSize;
+
+                        if (tile == TILES.FREE)
+                            ctx.fillStyle = 'grey'
+                        else if (tile == TILES.GROUND)
+                            ctx.fillStyle = 'brown'
+                        else if (tile == TILES.PIPE)
+                            ctx.fillStyle = 'red'
+                        else if (tile == TILES.CAPPED_PIPE)
+                            ctx.fillStyle = 'blue';
+                        else if (tile == TILES.CONNECTED_PIPE)
+                            ctx.fillStyle = 'yellow';
+
+                        ctx.fillRect(x, y, tileSize, tileSize)
+                    }
+                }
+            }
+
+            update() {
+                this.draw()
+            }
+
+            addCard(cardMap, row, column) {
+                ArrayHelper.addMatriz(this.mesa, cardMap, row, column);
+                this.ajustSize();
+            }
+
+            /* mantem sempre uma borda de 6 (tamanho da carta) espaços em branco */
+            ajustSize() {
+                /* Localiza extremidades */
+                let top = null,
+                    left = null,
+                    right = null,
+                    bottom = null;
+                for (let i = 0; i < this.mesa.length; i++) {
+                    const row = this.mesa[i];
+                    const indexL = row.findIndex(x => x != TILES.FREE);
+                    const indexR = row.findLastIndex(x => x != TILES.FREE);
+
+                    if (indexL > -1 || indexR > -1) {
+                        if (top == null)
+                            top = i;
+                        if (left == null || left > indexL)
+                            left = indexL;
+                        if (right == null || right < indexR)
+                            right = indexR;
+                        bottom = i;
+                    }
+                }
+
+                /* Calcula novo tamanho */
+                const newRows = (12 - (this.mesa.length - (bottom - top + 1))) + this.mesa.length
+                const newColumns = (12 - (this.mesa[0].length - (right - left + 1))) + this.mesa[0].length
+                const newMesa = ArrayHelper.createMatriz(newRows, newColumns, -1);
+
+                /* Move peças */
+                ArrayHelper.addMatriz(newMesa, this.mesa, 6 - top, 6 - left);
+                this.mesa = [...newMesa]
+            }
+        }
+
+        const tabuleiro = new Tabuleiro();
+
+        const mouse = {
+            x: undefined,
+            y: undefined,
+            press: false
+        }
+        let clicks = 0
+        canvas.addEventListener('click', (e) => {
+            if (clicks == 0)
+                tabuleiro.addCard(cartas[0].cardMap, 6, 3)
+            if (clicks == 1)
+                tabuleiro.addCard(cartas[3].cardMap, 6, 12)
+            clicks++
+        })
+        canvas.addEventListener('mousedown', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            mouse.press = true;
+        })
+        canvas.addEventListener('mouseup', (e) => {
+            mouse.press = false;
+        })
+        canvas.addEventListener('mousemove', (e) => {
+            if (mouse.press) {
+                tabuleiro.centerX += e.clientX - mouse.x;
+                tabuleiro.centerY += e.clientY - mouse.y;
+            }
+        })
+
+        const adicionaTodasCartas = () => {
+            let offsetX = 10, offsetY = 10, interator = 0;
+            for (const cardAttr in cartasMap) {
+                const x = interator * (tileSize * 4) + offsetX;
+                cartas.push(new Carta(x, offsetY, cartasMap[cardAttr]));
+                interator++;
+            }
+
+            offsetX = 10; offsetY = 10 + (tileSize * 7); interator = 0;
+            for (const cardAttr in cartasFinalMap) {
+                const x = interator * (tileSize * 4) + offsetX;
+                cartas.push(new Carta(x, offsetY, cartasFinalMap[cardAttr]));
+                interator++;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            cartas.forEach(item => {
+                item.update()
+            })
+
+            tabuleiro.update();
+        }
+
+        adicionaTodasCartas();
+        animate()
+
+    </script>
+</body>
+
+</html>
