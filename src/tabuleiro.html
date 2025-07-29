@@ -67,6 +67,13 @@
                 this.draw()
             }
 
+            isMouseOver() {
+                if (mouse.x > this.x && mouse.x < this.x + this.width &&
+                    mouse.y > this.y && mouse.y < this.y + this.height)
+                    return true;
+                else
+                    return false;
+            }
         }
 
         class ArrayHelper {
@@ -181,12 +188,51 @@
                 const newColumns = (12 - (this.mesa[0].length - (right - left + 1))) + this.mesa[0].length
                 const newMesa = ArrayHelper.createMatriz(newRows, newColumns, -1);
 
-                /* Move peças */
+                /* Move peças para o centro */
                 ArrayHelper.addMatriz(newMesa, this.mesa, 6 - top, 6 - left);
                 this.mesa = [...newMesa]
             }
         }
 
+        class Mao {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.cartas = [];
+                this.totalCartas = 10;
+            }
+
+            draw() {
+                this.cartas.forEach(item => item.update());
+
+                const offsetX = this.x - ((this.totalCartas * (tileSize * 4)) / 2);
+                const x = this.cartas.length * (tileSize * 4) + offsetX;
+                ctx.fillStyle = 'rgb(0,255,0)';
+                ctx.fillRect(x, this.y, 30, 30)
+            }
+
+            update() {
+                if (cartas && cartas.length > 0 &&
+                    this.cartas.length < this.totalCartas
+                ) {
+                    const novasCartas = this.totalCartas - this.cartas.length;
+                    for (let i = 0; i < novasCartas; i++)
+                        this.addCard()
+                }
+                this.draw()
+            }
+
+            addCard() {
+                // const rand = 2
+                const rand = Math.floor(Math.random() * cartas.length);
+                const carta = cartas[rand];
+                const offsetX = this.x - ((this.totalCartas * carta.width) / 2);
+                const x = this.cartas.length * (tileSize * 4) + offsetX;
+                this.cartas.push(new Carta(x, this.y, carta.cardMap));
+            }
+        }
+
+        const mao = new Mao(canvas.width / 2, canvas.height - (tileSize * 7));
         const tabuleiro = new Tabuleiro();
 
         const mouse = {
@@ -194,13 +240,13 @@
             y: undefined,
             press: false
         }
-        let clicks = 0
+        // let clicks = 0
         canvas.addEventListener('click', (e) => {
-            if (clicks == 0)
-                tabuleiro.addCard(cartas[0].cardMap, 6, 3)
-            if (clicks == 1)
-                tabuleiro.addCard(cartas[3].cardMap, 6, 12)
-            clicks++
+            // if (clicks == 0)
+            //     tabuleiro.addCard(cartas[0].cardMap, 6, 3)
+            // if (clicks == 1)
+            //     tabuleiro.addCard(cartas[3].cardMap, 6, 12)
+            // clicks++
         })
         canvas.addEventListener('mousedown', (e) => {
             mouse.x = e.clientX;
@@ -212,8 +258,19 @@
         })
         canvas.addEventListener('mousemove', (e) => {
             if (mouse.press) {
-                tabuleiro.centerX += e.clientX - mouse.x;
-                tabuleiro.centerY += e.clientY - mouse.y;
+
+                const dX = e.clientX - mouse.x;
+                const dY = e.clientY - mouse.y;
+                const angle = Math.atan2(dY, dX);
+
+                tabuleiro.centerX += Math.cos(angle)
+                tabuleiro.centerY += Math.sign(angle)
+
+                // tabuleiro.centerX += ((e.clientX - mouse.x) * (canvas.width - 20)) / canvas.width
+                // tabuleiro.centerY += ((e.clientY - mouse.y) * (canvas.height - 230)) / canvas.height;
+
+                // tabuleiro.centerX += e.clientX - mouse.x;
+                // tabuleiro.centerY += e.clientY - mouse.y;
             }
         })
 
@@ -244,6 +301,7 @@
             })
 
             tabuleiro.update();
+            mao.update();
         }
 
         adicionaTodasCartas();
